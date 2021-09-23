@@ -7,11 +7,13 @@ import { PUBSUB_EVENT_HANDLER_METADATA } from '../decorator';
 
 @Injectable()
 export class ExplorerService extends NestExplorerService {
-    constructor(private readonly modules: ModulesContainer) {
-        super(modules);
-    }
+  constructor(private readonly modules: ModulesContainer) {
+    super(modules);
+  }
 
-    pubsubEvents(): Type<IEventHandler<IEvent>>[] {
-        return this.flatMap<IEventHandler<IEvent>>([...this.modules.values()], (instance) => this.filterProvider(instance, PUBSUB_EVENT_HANDLER_METADATA));
-    }
+  pubsubEvents(): Type<IEventHandler<IEvent>>[] {
+    return this.flatMap<IEventHandler<IEvent>>([...this.modules.values()], (instance) =>
+      this.filterProvider(instance, PUBSUB_EVENT_HANDLER_METADATA),
+    );
+  }
 }

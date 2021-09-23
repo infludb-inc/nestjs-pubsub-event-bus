@@ -1,9 +1,9 @@
 export class ConnectionProvider {
-    static connections: string[] = [];
+  static connections: string[] = [];
 
-    static forHosts(hosts: string[]): ConnectionProvider {
-        ConnectionProvider.connections = hosts;
+  static forHosts(hosts: string[]): ConnectionProvider {
+    ConnectionProvider.connections = hosts;
 
-        return new ConnectionProvider();
-    }
+    return new ConnectionProvider();
+  }
 }

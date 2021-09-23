@@ -3,5 +3,5 @@ import type { IPubsubEventHandlerOptions } from '../decorator';
 import type { PubsubEvent } from './index';
 
 export interface IPubsubEventHandlerMetadata extends IPubsubEventHandlerOptions {
-    events: Type<PubsubEvent<any>>[];
+  events: Type<PubsubEvent<any>>[];
 }

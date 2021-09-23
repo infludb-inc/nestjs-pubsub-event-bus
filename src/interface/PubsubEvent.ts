@@ -2,29 +2,29 @@ import { PubsubEventListener } from './PubsubEventListener';
 import type { PublishOptions } from './PublishOptions';
 
 export abstract class PubsubEvent<T> extends PubsubEventListener<T> {
-    // Default publish options.
-    protected options: PublishOptions = {};
-    protected fireLocally: boolean = true;
+  // Default publish options.
+  protected options: PublishOptions = {};
+  protected fireLocally: boolean = true;
 
-    // Exchange name
-    abstract exchange(): string;
+  // Exchange name
+  abstract exchange(): string;
 
-    // Get publish options.
-    getOptions = (): PublishOptions => this.options;
+  // Get publish options.
+  getOptions = (): PublishOptions => this.options;
 
-    // Get local publishing option.
-    localEventEnabled = (): boolean => this.fireLocally;
+  // Get local publishing option.
+  localEventEnabled = (): boolean => this.fireLocally;
 
-    // Set the publish options at runtime (overrides the default publish options).
-    withOptions = (extra: PublishOptions): this => {
-        this.options = { ...this.options, ...extra };
+  // Set the publish options at runtime (overrides the default publish options).
+  withOptions = (extra: PublishOptions): this => {
+    this.options = { ...this.options, ...extra };
 
-        return this;
-    };
+    return this;
+  };
 
-    withLocalEvent = (allow: boolean = true): this => {
-        this.fireLocally = allow;
+  withLocalEvent = (allow: boolean = true): this => {
+    this.fireLocally = allow;
 
-        return this;
-    };
+    return this;
+  };
 }

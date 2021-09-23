@@ -10,200 +10,212 @@ import { CQRS_MODULE_CONSUMER_OPTIONS } from '../utils/configuration';
 import { PubsubManager } from './PubsubManager';
 
 export class Consumer extends PubsubManager {
-    protected name: string;
+  protected name: string;
 
-    constructor(@Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions) {
-        super();
+  constructor(@Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions) {
+    super();
+  }
+
+  async setupChannel(channel: ConfirmChannel): Promise<void> {
+    if (this.options.prefetchPerConsumer) {
+      await channel.prefetch(this.options.prefetchPerConsumer, false);
     }
 
-    async setupChannel(channel: ConfirmChannel): Promise<void> {
-        if (this.options.prefetchPerConsumer) {
-            await channel.prefetch(this.options.prefetchPerConsumer, false);
-        }
+    if (this.options.prefetchPerChannel) {
+      await channel.prefetch(this.options.prefetchPerChannel, true);
+    }
+  }
 
-        if (this.options.prefetchPerChannel) {
-            await channel.prefetch(this.options.prefetchPerChannel, true);
-        }
+  /**
+   * Listen for an event and consume its message payload
+   *
+   * @param handler - event handler
+   * @param events - list of events to listen for
+   * @param onMessage - a callback that receives an event message
+   */
+  async consume(
+    handler: PubsubHandler,
+    events: string[],
+    onMessage: (message: ConsumeMessage | null) => void,
+  ): Promise<void> {
+    if (this.appInTestingMode()) return;
+
+    const exchange: string = handler.exchange();
+    const queueName: string = handler.queue() ?? this.queue(handler);
+    const listenFor: string[] = this.listenFor(handler, events);
+
+    await this.channelWrapper$.addSetup(async (channel: ConfirmChannel) => {
+      await Promise.all([
+        channel.assertExchange(exchange, 'topic', this.exchangeOptions()),
+        channel.assertQueue(queueName, this.bindingOptions(handler.withQueueConfig())),
+        ...listenFor.map(async (event: string) => channel.bindQueue(queueName, exchange, event)),
+        channel.consume(queueName, (msg: ConsumeMessage | null) => {
+          try {
+            onMessage(msg);
+          } catch (e) {
+            this.logger().warn(`Message execution/acknowledge error: [${(e as Error).message}]`);
+          }
+        }),
+      ]);
+
+      this.logger().log(
+        `Listening for "${listenFor.join(', ')}" events from [${exchange} <- ${queueName}]`,
+      );
+    });
+  }
+
+  configureAutoAck(handler: Type<IEventHandler>, autoAck: AutoAckEnum): void {
+    switch (autoAck) {
+      case AutoAckEnum.NEVER:
+        this.implementAckAndNack(handler);
+        break;
+
+      case AutoAckEnum.ALWAYS_ACK:
+        this.mockAckAndNack(handler);
+        this.addAlwaysPositiveAck(handler);
+        break;
+
+      case AutoAckEnum.ACK_AND_NACK:
+        this.mockAckAndNack(handler);
+        this.addAutoAck(handler);
+        break;
+    }
+  }
+
+  ack(message: Message): void {
+    this.channelWrapper$.ack(message);
+  }
+
+  nack(message: Message): void {
+    this.channelWrapper$.nack(message);
+  }
+
+  /**
+   * Event, that consumer should listen for (Ex.: order.created, user.*, *.created, etc...)
+   */
+  protected listenFor = (handler: PubsubHandler, events?: string[]): string[] => {
+    if (events?.length) {
+      return events;
     }
 
-    /**
-     * Listen for an event and consume its message payload
-     *
-     * @param handler - event handler
-     * @param events - list of events to listen for
-     * @param onMessage - a callback that receives an event message
-     */
-    async consume(handler: PubsubHandler, events: string[], onMessage: (message: ConsumeMessage | null) => void): Promise<void> {
-        if (this.appInTestingMode()) return;
+    return [toEventName(handler.constructor.name.replace(/Handler$/i, ''))];
+  };
 
-        const exchange: string = handler.exchange();
-        const queueName: string = handler.queue() ?? this.queue(handler);
-        const listenFor: string[] = this.listenFor(handler, events);
+  /**
+   * Queue that should be listened for events.
+   */
+  protected queue(handler: PubsubHandler): string {
+    const pckName: string = (process.env.npm_package_name as string).split('/').pop() as string;
+    const platform = pckName.replace(/[_-]/gi, '.');
 
-        await this.channelWrapper$.addSetup(async (channel: ConfirmChannel) => {
-            await Promise.all([
-                channel.assertExchange(exchange, 'topic', this.exchangeOptions()),
-                channel.assertQueue(queueName, this.bindingOptions(handler.withQueueConfig())),
-                ...listenFor.map(async (event: string) => channel.bindQueue(queueName, exchange, event)),
-                channel.consume(queueName, (msg: ConsumeMessage | null) => {
-                    try {
-                        onMessage(msg);
-                    } catch (e) {
-                        this.logger().warn(`Message execution/acknowledge error: [${(e as Error).message}]`);
-                    }
-                }),
-            ]);
+    return [handler.exchange(), platform, this.toConsumerClassName(handler)].join(':');
+  }
 
-            this.logger().log(`Listening for "${listenFor.join(', ')}" events from [${exchange} <- ${queueName}]`);
-        });
-    }
-
-    configureAutoAck(handler: Type<IEventHandler>, autoAck: AutoAckEnum): void {
-        switch (autoAck) {
-            case AutoAckEnum.NEVER:
-                this.implementAckAndNack(handler);
-                break;
-
-            case AutoAckEnum.ALWAYS_ACK:
-                this.mockAckAndNack(handler);
-                this.addAlwaysPositiveAck(handler);
-                break;
-
-            case AutoAckEnum.ACK_AND_NACK:
-                this.mockAckAndNack(handler);
-                this.addAutoAck(handler);
-                break;
-        }
-    }
-
-    ack(message: Message): void {
-        this.channelWrapper$.ack(message);
-    }
-
-    nack(message: Message): void {
-        this.channelWrapper$.nack(message);
-    }
-
-    /**
-     * Event, that consumer should listen for (Ex.: order.created, user.*, *.created, etc...)
-     */
-    protected listenFor = (handler: PubsubHandler, events?: string[]): string[] => {
-        if (events?.length) {
-            return events;
-        }
-
-        return [toEventName(handler.constructor.name.replace(/Handler$/i, ''))];
+  protected bindingOptions(extra: BindingQueueOptions = {}): BindingQueueOptions {
+    return {
+      ...this.consumerConfiguration(),
+      ...extra,
     };
+  }
 
-    /**
-     * Queue that should be listened for events.
-     */
-    protected queue(handler: PubsubHandler): string {
-        const pckName: string = (process.env.npm_package_name as string).split('/').pop() as string;
-        const platform = pckName.replace(/[_-]/gi, '.');
+  protected consumerConfiguration(): BindingQueueOptions {
+    return ConfigProvider.bindings;
+  }
 
-        return [handler.exchange(), platform, this.toConsumerClassName(handler)].join(':');
-    }
+  protected toConsumerClassName(handler: PubsubHandler): string {
+    return toSnakeCase(handler.constructor.name);
+  }
 
-    protected bindingOptions(extra: BindingQueueOptions = {}): BindingQueueOptions {
-        return {
-            ...this.consumerConfiguration(),
-            ...extra,
-        };
-    }
+  private implementAckAndNack(handler: Type<IEventHandler>): void {
+    const ack: (message: Message) => void = this.ack.bind(this);
+    const nack: (message: Message) => void = this.nack.bind(this);
 
-    protected consumerConfiguration(): BindingQueueOptions {
-        return ConfigProvider.bindings;
-    }
+    Reflect.defineProperty(handler.prototype, 'ack', {
+      ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'ack'),
+      value(event: PubsubEvent<any>): void {
+        const message: Message | undefined = event.message();
+        if (message) {
+          ack(message);
+        }
+      },
+    });
 
-    protected toConsumerClassName(handler: PubsubHandler): string {
-        return toSnakeCase(handler.constructor.name);
-    }
+    Reflect.defineProperty(handler.prototype, 'nack', {
+      ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'nack'),
+      value(event: PubsubEvent<any>): void {
+        const message: Message | undefined = event.message();
+        if (message) {
+          nack(message);
+        }
+      },
+    });
+  }
 
-    private implementAckAndNack(handler: Type<IEventHandler>): void {
-        const ack: (message: Message) => void = this.ack.bind(this);
-        const nack: (message: Message) => void = this.nack.bind(this);
+  private mockAckAndNack(handler: Type<IEventHandler>): void {
+    const logger: LoggerService = this.logger();
 
-        Reflect.defineProperty(handler.prototype, 'ack', {
-            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'ack'),
-            value(event: PubsubEvent<any>): void {
-                const message: Message | undefined = event.message();
-                if (message) {
-                    ack(message);
-                }
-            },
-        });
+    Reflect.defineProperty(handler.prototype, 'ack', {
+      ...Reflect.getOwnPropertyDescriptor(PubsubHandler.prototype, 'ack'),
+      value(_event: PubsubEvent<any>): void {
+        logger.warn(
+          '"ack" method should not be called with enabled automatic acknowledge',
+          handler.name,
+        );
+      },
+    });
 
-        Reflect.defineProperty(handler.prototype, 'nack', {
-            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'nack'),
-            value(event: PubsubEvent<any>): void {
-                const message: Message | undefined = event.message();
-                if (message) {
-                    nack(message);
-                }
-            },
-        });
-    }
+    Reflect.defineProperty(handler.prototype, 'nack', {
+      ...Reflect.getOwnPropertyDescriptor(PubsubHandler.prototype, 'nack'),
+      value(_event: PubsubEvent<any>): void {
+        logger.warn(
+          '"nack" method should not be called with enabled automatic acknowledge',
+          handler.name,
+        );
+      },
+    });
+  }
 
-    private mockAckAndNack(handler: Type<IEventHandler>): void {
-        const logger: LoggerService = this.logger();
+  private addAlwaysPositiveAck(handler: Type<IEventHandler>): void {
+    const ack: (message: Message) => void = this.ack.bind(this);
+    const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
 
-        Reflect.defineProperty(handler.prototype, 'ack', {
-            ...Reflect.getOwnPropertyDescriptor(PubsubHandler.prototype, 'ack'),
-            value(_event: PubsubEvent<any>): void {
-                logger.warn('"ack" method should not be called with enabled automatic acknowledge', handler.name);
-            },
-        });
+    Reflect.defineProperty(handler.prototype, 'handle', {
+      ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle'),
+      async value(event: PubsubEvent<any>): Promise<void> {
+        try {
+          await originalMethod.apply(this, [event]);
+        } finally {
+          const message: Message | undefined = event.message();
+          if (message) {
+            ack(message);
+          }
+        }
+      },
+    });
+  }
 
-        Reflect.defineProperty(handler.prototype, 'nack', {
-            ...Reflect.getOwnPropertyDescriptor(PubsubHandler.prototype, 'nack'),
-            value(_event: PubsubEvent<any>): void {
-                logger.warn('"nack" method should not be called with enabled automatic acknowledge', handler.name);
-            },
-        });
-    }
+  private addAutoAck(handler: Type<IEventHandler>): void {
+    const ack: (message: Message) => void = this.ack.bind(this);
+    const nack: (message: Message) => void = this.nack.bind(this);
+    const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
 
-    private addAlwaysPositiveAck(handler: Type<IEventHandler>): void {
-        const ack: (message: Message) => void = this.ack.bind(this);
-        const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
-
-        Reflect.defineProperty(handler.prototype, 'handle', {
-            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle'),
-            async value(event: PubsubEvent<any>): Promise<void> {
-                try {
-                    await originalMethod.apply(this, [event]);
-                } finally {
-                    const message: Message | undefined = event.message();
-                    if (message) {
-                        ack(message);
-                    }
-                }
-            },
-        });
-    }
-
-    private addAutoAck(handler: Type<IEventHandler>): void {
-        const ack: (message: Message) => void = this.ack.bind(this);
-        const nack: (message: Message) => void = this.nack.bind(this);
-        const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
-
-        Reflect.defineProperty(handler.prototype, 'handle', {
-            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle'),
-            async value(event: PubsubEvent<any>): Promise<void> {
-                try {
-                    await originalMethod.apply(this, [event]);
-                    const message: Message | undefined = event.message();
-                    if (message) {
-                        ack(message);
-                    }
-                } catch (e) {
-                    const message: Message | undefined = event.message();
-                    if (message) {
-                        nack(message);
-                    }
-                    throw e;
-                }
-            },
-        });
-    }
+    Reflect.defineProperty(handler.prototype, 'handle', {
+      ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle'),
+      async value(event: PubsubEvent<any>): Promise<void> {
+        try {
+          await originalMethod.apply(this, [event]);
+          const message: Message | undefined = event.message();
+          if (message) {
+            ack(message);
+          }
+        } catch (e) {
+          const message: Message | undefined = event.message();
+          if (message) {
+            nack(message);
+          }
+          throw e;
+        }
+      },
+    });
+  }
 }

@@ -4,20 +4,8 @@
  * ================
  */
 module.exports = {
-    tabWidth: 2,
-    useTabs: false,
-    semi: true,
-    singleQuote: false,
-    trailingComma: 'all',
-    arrowParens: 'always',
-    printWidth: 160,
-    overrides: [
-        {
-            files: ['*.js', '*.ts', '*.tsx', '*.json'],
-            options: {
-                tabWidth: 4,
-                singleQuote: true,
-            },
-        },
-    ],
+  singleQuote: true,
+  printWidth: 100,
+  trailingComma: 'all',
+  tabWidth: 2,
 };

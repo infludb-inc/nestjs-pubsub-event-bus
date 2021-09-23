@@ -18,6 +18,6 @@ jobs:
           # Defaults to the user or organization that owns the workflow file
           scope: '@infludb-inc'
       - run: yarn
-      - run: yarn run publish
+      - run: yarn publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

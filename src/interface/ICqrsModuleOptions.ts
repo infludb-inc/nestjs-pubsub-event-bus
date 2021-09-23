@@ -6,24 +6,24 @@ import type { PublishOptions } from './PublishOptions';
 import type { PubsubExchangeType } from './PubsubExchangeType';
 
 interface ICqrsModuleOptionsConfig {
-    exchange?: ExchangeOptions;
-    consumer?: IConsumerOptions;
-    producer?: PublishOptions;
-    bindings?: BindingQueueOptions;
+  exchange?: ExchangeOptions;
+  consumer?: IConsumerOptions;
+  producer?: PublishOptions;
+  bindings?: BindingQueueOptions;
 }
 
 export interface ICqrsModuleOptions {
-    connections: string[];
+  connections: string[];
 
-    exchangeType?: PubsubExchangeType;
+  exchangeType?: PubsubExchangeType;
 
-    config?: ICqrsModuleOptionsConfig;
+  config?: ICqrsModuleOptionsConfig;
 
-    /**
-     * If "true", registers `CqrsModule` as a global module.
-     * See: https://docs.nestjs.com/modules#global-modules
-     */
-    isGlobal?: boolean;
+  /**
+   * If "true", registers `CqrsModule` as a global module.
+   * See: https://docs.nestjs.com/modules#global-modules
+   */
+  isGlobal?: boolean;
 
-    logger?: LoggerService;
+  logger?: LoggerService;
 }

@@ -1,11 +1,11 @@
 import type { LoggerService } from '@nestjs/common';
 
 export class LoggerProvider {
-    static logger: LoggerService;
+  static logger: LoggerService;
 
-    static forLogger(logger: LoggerService): LoggerProvider {
-        LoggerProvider.logger = logger;
+  static forLogger(logger: LoggerService): LoggerProvider {
+    LoggerProvider.logger = logger;
 
-        return new LoggerProvider();
-    }
+    return new LoggerProvider();
+  }
 }

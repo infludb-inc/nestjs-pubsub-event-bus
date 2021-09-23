@@ -9,13 +9,13 @@ import startCase from 'lodash/startCase';
  * @example Fanout => "#"
  */
 export const toEventName = (className: string): string => {
-    className = snakeCase(className.replace(/Event$/, '')).replace(/_/gi, '.');
+  className = snakeCase(className.replace(/Event$/, '')).replace(/_/gi, '.');
 
-    if (className === 'fanout') {
-        return '#';
-    }
+  if (className === 'fanout') {
+    return '#';
+  }
 
-    return className;
+  return className;
 };
 
 /**
@@ -25,7 +25,7 @@ export const toEventName = (className: string): string => {
  * @example "#" => Fanout
  */
 export const toEventClassName = (event: string): string => {
-    return event.split('.').map(startCase).join('');
+  return event.split('.').map(startCase).join('');
 };
 
 /**
@@ -36,9 +36,9 @@ export const toEventClassName = (event: string): string => {
  * @param className
  */
 export const toSnakeCase = (className: string | Record<string, unknown>): string => {
-    if (typeof className === 'object') {
-        className = className.constructor.name;
-    }
+  if (typeof className === 'object') {
+    className = className.constructor.name;
+  }
 
-    return snakeCase(className.toString().replace(/Handler$/, ''));
+  return snakeCase(className.toString().replace(/Handler$/, ''));
 };
