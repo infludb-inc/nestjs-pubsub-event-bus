@@ -1,126 +1,123 @@
 {
-  "name": "@bloggerslab/pubsub-event-bus",
-  "description": "NestJS EventBus extension for RabbitMQ PubSub",
-  "version": "1.6.0",
-  "main": "src/index.js",
-  "scripts": {
-    "commit": "git-cz",
-    "pre-commit": "yarn run format:staged && tsc --project tsconfig.json && yarn run build:dist && yarn run lint",
-    "prettier": "yarn run prettier:base -- '**/**.+(md)'",
-    "prettier:base": "prettier --ignore-path .eslintignore --write",
-    "format": "yarn run prettier && yarn run lint -- --fix",
-    "format:base": "yarn run lint:base -- --fix",
-    "format:staged": "git add . && lint-staged --allow-empty -q",
-    "lint": "yarn run lint:base -- './**/**.{ts,tsx,js,json}'",
-    "lint:base": "yarn run lint:config:check && eslint",
-    "lint:config:check": "eslint-config-prettier src/index.ts",
-    "test": "jest",
-    "coverage": "jest --collect-coverage",
-    "build:dist": "rimraf dist && tsc --project tsconfig.compile.json && node bin/prepublish.js",
-    "check:tsc": "rimraf dist/* && tsc --project tsconfig.json && rimraf dist",
-    "prepublishOnly": "echo \"use 'yarn run publish'\" && exit 1",
-    "version:prerelease": "ts-node -T bin/yarn-dev-version.ts",
-    "publish": "yarn run build:dist && node bin/prepublish.js && yarn publish dist",
-    "publish:dev": "yarn run version:prerelease && yarn run publish --tag dev",
-    "publish:dev:dry": "yarn run publish --tag dev --dry-run",
-    "preversion": "yarn run pre-commit",
-    "version": "echo \"use 'yarn run release'\" && exit 1",
-    "postversion": "git push && git push --tags",
-    "release": "standard-version && git push && git push --tags && yarn run publish && yarn run github-release",
-    "release:dry": "yarn run publish:dev:dry && standard-version --dry-run",
-    "github-release": "conventional-github-releaser -p angular"
-  },
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/infludb-inc/nestjs-pubsub-event-bus.git"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
-  "keywords": [
-    "NestJS",
-    "PubSub",
-    "EventBus",
-    "CqrsModule",
-    "RabbitMQ"
-  ],
-  "directories": {
-    "bin": "./bin",
-    "lib": "./src",
-    "test": "./test"
-  },
-  "husky": {
-    "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS && yarn run pre-commit",
-      "post-commit": "git update-index --again"
-    }
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,json}": [
-      "yarn run format:base"
+    "name": "@infludb-inc/pubsub-event-bus",
+    "description": "NestJS EventBus extension for RabbitMQ PubSub",
+    "version": "1.6.0",
+    "main": "src/index.js",
+    "scripts": {
+        "commit": "git-cz",
+        "pre-commit": "yarn run format:staged && tsc --project tsconfig.json && yarn run build:dist && yarn run lint",
+        "prettier": "yarn run prettier:base -- '**/**.+(md)'",
+        "prettier:base": "prettier --ignore-path .eslintignore --write",
+        "format": "yarn run prettier && yarn run lint -- --fix",
+        "format:base": "yarn run lint:base -- --fix",
+        "format:staged": "git add . && lint-staged --allow-empty -q",
+        "lint": "yarn run lint:base -- './**/**.{ts,tsx,js,json}'",
+        "lint:base": "yarn run lint:config:check && eslint",
+        "lint:config:check": "eslint-config-prettier src/index.ts",
+        "test": "jest",
+        "coverage": "jest --collect-coverage",
+        "build:dist": "rimraf dist && tsc --project tsconfig.compile.json && node bin/prepublish.js",
+        "check:tsc": "rimraf dist/* && tsc --project tsconfig.json && rimraf dist",
+        "prepublishOnly": "echo \"use 'yarn run publish'\" && exit 1",
+        "version:prerelease": "ts-node -T bin/yarn-dev-version.ts",
+        "publish": "yarn run build:dist && node bin/prepublish.js && yarn publish dist --no-git-tag-version",
+        "publish:dev": "yarn run version:prerelease && yarn run publish --tag dev",
+        "publish:dev:dry": "yarn run publish --tag dev --dry-run",
+        "preversion": "yarn run pre-commit",
+        "version": "echo \"use 'yarn run release'\" && exit 1",
+        "postversion": "git push && git push --tags",
+        "release": "standard-version && git push && git push --tags && yarn run publish && yarn run github-release",
+        "release:dry": "yarn run publish:dev:dry && standard-version --dry-run",
+        "github-release": "conventional-github-releaser -p angular"
+    },
+    "author": "",
+    "license": "MIT",
+    "repository": "git://github.com/infludb-inc/nestjs-pubsub-event-bus.git",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "keywords": [
+        "NestJS",
+        "PubSub",
+        "EventBus",
+        "CqrsModule",
+        "RabbitMQ"
     ],
-    "*.{md}": [
-      "yarn run prettier:base"
-    ]
-  },
-  "config": {
-    "commitizen": {
-      "path": "cz-conventional-changelog"
-    }
-  },
-  "bugs": {
-    "url": "https://github.com/infludb-inc/nestjs-pubsub-event-bus/issues"
-  },
-  "homepage": "https://github.com/infludb-inc/nestjs-pubsub-event-bus#readme",
-  "devDependencies": {
-    "@commitlint/cli": "13.1.0",
-    "@commitlint/config-conventional": "13.1.0",
-    "@nestjs/common": "8.0.4",
-    "@nestjs/core": "8.0.4",
-    "@nestjs/cqrs": "8.0.0",
-    "@types/amqp-connection-manager": "2.0.12",
-    "@types/jest": "27.0.2",
-    "@types/lodash": "4.14.173",
-    "@types/minimist": "1.2.2",
-    "@types/semver": "7.3.8",
-    "@typescript-eslint/eslint-plugin": "4.31.2",
-    "@typescript-eslint/parser": "4.31.2",
-    "amqp-connection-manager": "3.7.0",
-    "amqplib": "0.8.0",
-    "class-transformer": "0.4.0",
-    "commitizen": "4.1.4",
-    "conventional-changelog-cli": "2.1.1",
-    "cz-conventional-changelog": "3.3.0",
-    "eslint": "7.32.0",
-    "eslint-config-prettier": "8.3.0",
-    "eslint-import-resolver-typescript": "2.5.0",
-    "eslint-plugin-import": "2.24.2",
-    "eslint-plugin-prettier": "4.0.0",
-    "husky": "7.0.2",
-    "jest": "27.2.1",
-    "lint-staged": "11.1.2",
-    "lodash": "4.17.21",
-    "minimist": "1.2.5",
-    "prettier": "2.4.1",
-    "reflect-metadata": "0.1.13",
-    "rimraf": "3.0.2",
-    "rxjs": "7.3.0",
-    "semver": "7.3.5",
-    "standard-version": "9.3.1",
-    "ts-jest": "27.0.5",
-    "ts-node": "10.2.1",
-    "typescript": "4.4.3"
-  },
-  "peerDependencies": {
-    "@nestjs/common": ">=8.*",
-    "@nestjs/core": ">=8.*",
-    "@nestjs/cqrs": ">=8.*",
-    "amqp-connection-manager": ">=3.7",
-    "amqplib": ">=0.8",
-    "reflect-metadata": ">=0.1",
-    "lodash": ">=4.17.21"
-  },
-  "dependencies": {}
+    "directories": {
+        "bin": "./bin",
+        "lib": "./src",
+        "test": "./test"
+    },
+    "husky": {
+        "hooks": {
+            "commit-msg": "commitlint -E HUSKY_GIT_PARAMS && yarn run pre-commit",
+            "post-commit": "git update-index --again"
+        }
+    },
+    "lint-staged": {
+        "*.{ts,tsx,js,json}": [
+            "yarn run format:base"
+        ],
+        "*.{md}": [
+            "yarn run prettier:base"
+        ]
+    },
+    "config": {
+        "commitizen": {
+            "path": "cz-conventional-changelog"
+        }
+    },
+    "bugs": {
+        "url": "https://github.com/infludb-inc/nestjs-pubsub-event-bus/issues"
+    },
+    "homepage": "https://github.com/infludb-inc/nestjs-pubsub-event-bus#readme",
+    "devDependencies": {
+        "@commitlint/cli": "13.1.0",
+        "@commitlint/config-conventional": "13.1.0",
+        "@nestjs/common": "8.0.4",
+        "@nestjs/core": "8.0.4",
+        "@nestjs/cqrs": "8.0.0",
+        "@types/amqp-connection-manager": "2.0.12",
+        "@types/jest": "27.0.2",
+        "@types/lodash": "4.14.173",
+        "@types/minimist": "1.2.2",
+        "@types/semver": "7.3.8",
+        "@typescript-eslint/eslint-plugin": "4.31.2",
+        "@typescript-eslint/parser": "4.31.2",
+        "amqp-connection-manager": "3.7.0",
+        "amqplib": "0.8.0",
+        "class-transformer": "0.4.0",
+        "commitizen": "4.1.4",
+        "conventional-changelog-cli": "2.1.1",
+        "cz-conventional-changelog": "3.3.0",
+        "eslint": "7.32.0",
+        "eslint-config-prettier": "8.3.0",
+        "eslint-import-resolver-typescript": "2.5.0",
+        "eslint-plugin-import": "2.24.2",
+        "eslint-plugin-prettier": "4.0.0",
+        "husky": "7.0.2",
+        "jest": "27.2.1",
+        "lint-staged": "11.1.2",
+        "lodash": "4.17.21",
+        "minimist": "1.2.5",
+        "prettier": "2.4.1",
+        "reflect-metadata": "0.1.13",
+        "rimraf": "3.0.2",
+        "rxjs": "7.3.0",
+        "semver": "7.3.5",
+        "standard-version": "9.3.1",
+        "ts-jest": "27.0.5",
+        "ts-node": "10.2.1",
+        "typescript": "4.4.3"
+    },
+    "peerDependencies": {
+        "@nestjs/common": ">=8.*",
+        "@nestjs/core": ">=8.*",
+        "@nestjs/cqrs": ">=8.*",
+        "amqp-connection-manager": ">=3.7",
+        "amqplib": ">=0.8",
+        "reflect-metadata": ">=0.1",
+        "lodash": ">=4.17.21"
+    },
+    "dependencies": {}
 }
