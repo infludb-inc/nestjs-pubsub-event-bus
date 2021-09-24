@@ -1,7 +1,7 @@
 {
   "name": "@infludb-inc/nestjs-pubsub-event-bus",
   "description": "NestJS EventBus extension for RabbitMQ PubSub",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "main": "src/index.js",
   "scripts": {
     "commit": "git-cz",
@@ -116,8 +116,10 @@
     "@nestjs/cqrs": ">=8.*",
     "amqp-connection-manager": ">=3.7",
     "amqplib": ">=0.8",
-    "reflect-metadata": ">=0.1",
-    "lodash": ">=4.17.21"
+    "lodash": ">=4.17.21",
+    "reflect-metadata": ">=0.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "change-case": "4.1.2"
+  }
 }
