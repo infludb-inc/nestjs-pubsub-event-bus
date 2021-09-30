@@ -2,7 +2,6 @@ const fs = require('fs');
 
 const {
   scripts,
-  dependencies,
   devDependencies,
   husky,
   files,
